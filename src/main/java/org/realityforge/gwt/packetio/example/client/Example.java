@@ -107,7 +107,6 @@ public final class Example
     }
     _connect.setEnabled( false );
     _commChannel.setEnabled( false );
-
   }
 
   private void doDisconnect()
