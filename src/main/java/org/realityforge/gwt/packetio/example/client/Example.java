@@ -6,6 +6,7 @@ import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FlowPanel;
@@ -17,6 +18,8 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import javax.annotation.Nonnull;
 import org.realityforge.gwt.eventsource.client.EventSource;
+import org.realityforge.gwt.webpoller.client.HttpRequestFactory;
+import org.realityforge.gwt.webpoller.client.WebPoller;
 import org.realityforge.gwt.websockets.client.WebSocket;
 
 public final class Example
@@ -29,6 +32,7 @@ public final class Example
   private ListBox _commChannel;
   private EventSource _eventSource;
   private WebSocket _webSocket;
+  private WebPoller _webPoller;
 
   public void onModuleLoad()
   {
@@ -101,6 +105,25 @@ public final class Example
         _webSocket.connect( baseURL.replaceFirst( "^http\\:", "ws:" ) + "api/wstime" );
         registerListeners( _webSocket );
         break;
+      case LONG_POLL:
+      {
+        final RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, baseURL + "api/time/long_poll" );
+        _webPoller = WebPoller.newWebPoller( new HttpRequestFactory( requestBuilder ) );
+        registerListeners( _webPoller );
+        _webPoller.setLongPoll( true );
+        _webPoller.start();
+      }
+      break;
+      case POLL:
+      {
+        final RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, baseURL + "api/time/poll" );
+        _webPoller = WebPoller.newWebPoller( new HttpRequestFactory( requestBuilder ) );
+        registerListeners( _webPoller );
+        _webPoller.setLongPoll( false );
+        _webPoller.start();
+      }
+      break;
+
       default:
         Window.alert( "Connection Type unsupported" );
         return;
@@ -111,6 +134,11 @@ public final class Example
 
   private void doDisconnect()
   {
+    if( null != _webPoller )
+    {
+      _webPoller.stop();
+      _webPoller = null;
+    }
     if ( null != _eventSource )
     {
       _eventSource.close();
@@ -154,6 +182,42 @@ public final class Example
     {
       @Override
       public void onMessageEvent( @Nonnull final org.realityforge.gwt.websockets.client.event.MessageEvent event )
+      {
+        onMessage( event.getData() );
+      }
+    } );
+  }
+
+  private void registerListeners( final WebPoller eventSource )
+  {
+    eventSource.addStartHandler( new org.realityforge.gwt.webpoller.client.event.StartEvent.Handler()
+    {
+      @Override
+      public void onStartEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.StartEvent event )
+      {
+        onOpen();
+      }
+    } );
+    eventSource.addStopHandler( new org.realityforge.gwt.webpoller.client.event.StopEvent.Handler()
+    {
+      @Override
+      public void onStopEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.StopEvent event )
+      {
+        onClose();
+      }
+    } );
+    eventSource.addErrorHandler( new org.realityforge.gwt.webpoller.client.event.ErrorEvent.Handler()
+    {
+      @Override
+      public void onErrorEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.ErrorEvent event )
+      {
+        onError();
+      }
+    } );
+    eventSource.addMessageHandler( new org.realityforge.gwt.webpoller.client.event.MessageEvent.Handler()
+    {
+      @Override
+      public void onMessageEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.MessageEvent event )
       {
         onMessage( event.getData() );
       }

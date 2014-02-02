@@ -8,7 +8,7 @@ define 'gwt-packetio-example' do
   compile.options.target = '1.7'
   compile.options.lint = 'all'
 
-  compile.with :gwt_websockets, :gwt_eventsource, :jersey_server, :jersey_sse, :javax_annotation, :javax_javaee, :gwt_user
+  compile.with :gwt_webpoller, :gwt_websockets, :gwt_eventsource, :jersey_server, :jersey_sse, :javax_annotation, :javax_javaee, :gwt_user
 
   gwt_dir = gwt(["org.realityforge.gwt.packetio.example.Example"],
                 :java_args => ["-Xms512M", "-Xmx1024M", "-XX:PermSize=128M", "-XX:MaxPermSize=256M"],
