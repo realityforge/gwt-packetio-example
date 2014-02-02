@@ -1,6 +1,7 @@
 package org.realityforge.gwt.packetio.example.server;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,11 +23,21 @@ public class TimeResource
   private final SseBroadcaster _broadcaster = new SseBroadcaster();
   private final Collection<AsyncResponse> _waiters = new ConcurrentLinkedQueue<>();
   private final ScheduledExecutorService _scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+  private String _message;
 
   @PostConstruct
   public void postConstruct()
   {
-    _scheduledExecutor.scheduleWithFixedDelay( new TimeGenerator( _broadcaster, _waiters ), 0, 1, TimeUnit.SECONDS );
+    final TimeGenerator command = new TimeGenerator( _broadcaster, _waiters );
+    _scheduledExecutor.scheduleWithFixedDelay( new Runnable()
+    {
+      @Override
+      public void run()
+      {
+        command.run();
+        _message = "p: The time is " + new Date();
+      }
+    }, 0, 1, TimeUnit.SECONDS );
   }
 
   @GET
@@ -44,5 +55,15 @@ public class TimeResource
   public void hangUp( @Suspended AsyncResponse response )
   {
     _waiters.add( response );
+  }
+
+  @Path("poll")
+  @GET
+  @Produces("text/plain")
+  public String poll()
+  {
+    final String message = _message;
+    _message = null;
+    return message;
   }
 }
