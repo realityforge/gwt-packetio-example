@@ -134,7 +134,7 @@ public final class Example
 
   private void doDisconnect()
   {
-    if( null != _webPoller )
+    if ( null != _webPoller )
     {
       _webPoller.stop();
       _webPoller = null;
