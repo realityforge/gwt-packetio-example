@@ -240,7 +240,7 @@ public final class Example
       @Override
       public void onMessageEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.MessageEvent event )
       {
-        onMessage( event.getData() );
+        onMessage( event.getContext(), event.getData() );
       }
     } ) );
   }
@@ -281,7 +281,13 @@ public final class Example
     } ) );
   }
 
-  private void onMessage( final String data )
+  private void onMessage( @Nonnull final String data )
+  {
+    @Nonnull final Map<String, String> context = Collections.emptyMap();
+    onMessage( context, data );
+  }
+
+  private void onMessage( @Nonnull final Map<String, String> context, @Nonnull final String data )
   {
     appendText( "message: " + data, "black" );
   }
