@@ -113,7 +113,8 @@ public final class Example
       case LONG_POLL:
       {
         final RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, baseURL + "api/time/long_poll" );
-        _webPoller = WebPoller.newWebPoller( new HttpRequestFactory( requestBuilder ) );
+        _webPoller = WebPoller.newWebPoller();
+        _webPoller.setRequestFactory( new HttpRequestFactory( requestBuilder ) );
         registerListeners( _webPoller );
         _webPoller.setLongPoll( true );
         _webPoller.start();
@@ -122,7 +123,8 @@ public final class Example
       case POLL:
       {
         final RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, baseURL + "api/time/poll" );
-        _webPoller = WebPoller.newWebPoller( new HttpRequestFactory( requestBuilder ) );
+        _webPoller = WebPoller.newWebPoller();
+        _webPoller.setRequestFactory( new HttpRequestFactory( requestBuilder ) );
         registerListeners( _webPoller );
         _webPoller.setLongPoll( false );
         _webPoller.start();
