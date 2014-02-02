@@ -210,7 +210,6 @@ public final class Example
     _registrations.clear();
   }
 
-
   private void registerListeners( final WebPoller eventSource )
   {
     register( eventSource.addStartHandler( new org.realityforge.gwt.webpoller.client.event.StartEvent.Handler()
