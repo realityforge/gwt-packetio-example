@@ -20,7 +20,7 @@ import org.glassfish.jersey.media.sse.SseBroadcaster;
 public class TimeResource
 {
   private final SseBroadcaster _broadcaster = new SseBroadcaster();
-  private final Collection<AsyncResponse> _waiters = new ConcurrentLinkedQueue<>(  );
+  private final Collection<AsyncResponse> _waiters = new ConcurrentLinkedQueue<>();
   private final ScheduledExecutorService _scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
   @PostConstruct
@@ -30,7 +30,7 @@ public class TimeResource
   }
 
   @GET
-  @Produces( "text/event-stream" )
+  @Produces("text/event-stream")
   public EventOutput getMessages()
   {
     final EventOutput eventOutput = new EventOutput();
@@ -40,7 +40,7 @@ public class TimeResource
 
   @Path("long_poll")
   @GET
-  @Produces( "text/plain" )
+  @Produces("text/plain")
   public void hangUp( @Suspended AsyncResponse response )
   {
     _waiters.add( response );
