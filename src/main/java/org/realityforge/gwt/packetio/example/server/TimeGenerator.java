@@ -27,7 +27,7 @@ final class TimeGenerator
     final String message = "The time is " + new Date();
     final OutboundEvent.Builder b = new OutboundEvent.Builder();
     b.mediaType( MediaType.TEXT_PLAIN_TYPE );
-    b.data( String.class, message );
+    b.data( String.class, "sse: " + message );
 
     _broadcaster.broadcast( b.build() );
 
@@ -40,7 +40,7 @@ final class TimeGenerator
         iterator.remove();
         if( !response.isCancelled() )
         {
-          response.resume( message );
+          response.resume( "lp: " + message );
         }
       }
     }
