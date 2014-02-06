@@ -11,7 +11,7 @@ artifacts:
   javax_validation: javax.validation:validation-api:jar:1.0.0.GA
   javax_validation_sources: javax.validation:validation-api:jar:sources:1.0.0.GA
 
-  gwt_webpoller: org.realityforge.gwt.webpoller:gwt-webpoller:jar:0.2
+  gwt_webpoller: org.realityforge.gwt.webpoller:gwt-webpoller:jar:0.3
 
   gwt_websockets: org.realityforge.gwt.websockets:gwt-websockets:jar:0.2
 
