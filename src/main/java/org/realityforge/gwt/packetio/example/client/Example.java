@@ -6,7 +6,6 @@ import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FlowPanel;
@@ -22,8 +21,12 @@ import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import org.realityforge.gwt.eventsource.client.EventSource;
-import org.realityforge.gwt.webpoller.client.HttpRequestFactory;
-import org.realityforge.gwt.webpoller.client.WebPoller;
+import org.realityforge.gwt.packetio.client.PacketIO;
+import org.realityforge.gwt.packetio.client.Strategy;
+import org.realityforge.gwt.packetio.client.event.ErrorEvent;
+import org.realityforge.gwt.packetio.client.event.MessageEvent;
+import org.realityforge.gwt.packetio.client.event.StartEvent;
+import org.realityforge.gwt.packetio.client.event.StopEvent;
 import org.realityforge.gwt.websockets.client.WebSocket;
 
 public final class Example
@@ -35,9 +38,7 @@ public final class Example
   private Button _disconnect;
   private Button _connect;
   private ListBox _commChannel;
-  private EventSource _eventSource;
-  private WebSocket _webSocket;
-  private WebPoller _webPoller;
+  private PacketIO _packetIO = PacketIO.newPacketIO();
 
   public void onModuleLoad()
   {
@@ -101,33 +102,21 @@ public final class Example
     switch ( connectionType )
     {
       case EVENTSOURCE:
-        _eventSource = EventSource.newEventSourceIfSupported();
-        _eventSource.connect( baseURL + "api/time" );
-        registerListeners( _eventSource );
+        _packetIO.setStrategy( Strategy.EVENTSOURCE );
         break;
       case WEBSOCKET:
-        _webSocket = WebSocket.newWebSocketIfSupported();
-        _webSocket.connect( baseURL.replaceFirst( "^http\\:", "ws:" ) + "api/wstime" );
-        registerListeners( _webSocket );
+        _packetIO.setStrategy( Strategy.WEBSOCKET );
         break;
       case LONG_POLL:
       {
-        final RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, baseURL + "api/time/long_poll" );
-        _webPoller = WebPoller.newWebPoller();
-        _webPoller.setRequestFactory( new HttpRequestFactory( requestBuilder ) );
-        registerListeners( _webPoller );
-        _webPoller.setLongPoll( true );
-        _webPoller.start();
+        //final RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, baseURL + "api/time/long_poll" );
+        _packetIO.setStrategy( Strategy.POLL );
       }
       break;
       case POLL:
       {
-        final RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, baseURL + "api/time/poll" );
-        _webPoller = WebPoller.newWebPoller();
-        _webPoller.setRequestFactory( new HttpRequestFactory( requestBuilder ) );
-        registerListeners( _webPoller );
-        _webPoller.setLongPoll( false );
-        _webPoller.start();
+        //final RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, baseURL + "api/time/long_poll" );
+        _packetIO.setStrategy( Strategy.POLL );
       }
       break;
 
@@ -135,61 +124,55 @@ public final class Example
         Window.alert( "Connection Type unsupported" );
         return;
     }
+    _packetIO.setBaseURL( baseURL );
+    _packetIO.start();
+    registerListeners( _packetIO );
+
     _connect.setEnabled( false );
     _commChannel.setEnabled( false );
   }
 
   private void doDisconnect()
   {
-    if ( null != _webPoller )
+    if ( null != _packetIO )
     {
-      _webPoller.stop();
-      _webPoller = null;
-    }
-    if ( null != _eventSource )
-    {
-      _eventSource.close();
-      _eventSource = null;
-    }
-    if ( null != _webSocket )
-    {
-      _webSocket.close();
-      _webSocket = null;
+      _packetIO.stop();
+      _packetIO = null;
     }
     deregisterHandlers();
     _disconnect.setEnabled( false );
   }
 
-  private void registerListeners( final WebSocket webSocket )
+  private void registerListeners( final PacketIO webSocket )
   {
-    register( webSocket.addOpenHandler( new org.realityforge.gwt.websockets.client.event.OpenEvent.Handler()
+    register( webSocket.addStartHandler( new StartEvent.Handler()
     {
       @Override
-      public void onOpenEvent( @Nonnull final org.realityforge.gwt.websockets.client.event.OpenEvent event )
+      public void onStartEvent( @Nonnull final StartEvent event )
       {
         onOpen();
       }
     } ) );
-    register( webSocket.addCloseHandler( new org.realityforge.gwt.websockets.client.event.CloseEvent.Handler()
+    register( webSocket.addStopHandler( new StopEvent.Handler()
     {
       @Override
-      public void onCloseEvent( @Nonnull final org.realityforge.gwt.websockets.client.event.CloseEvent event )
+      public void onStopEvent( @Nonnull final StopEvent event )
       {
         onClose();
       }
     } ) );
-    register( webSocket.addErrorHandler( new org.realityforge.gwt.websockets.client.event.ErrorEvent.Handler()
+    register( webSocket.addErrorHandler( new ErrorEvent.Handler()
     {
       @Override
-      public void onErrorEvent( @Nonnull final org.realityforge.gwt.websockets.client.event.ErrorEvent event )
+      public void onErrorEvent( @Nonnull final ErrorEvent event )
       {
         onError();
       }
     } ) );
-    register( webSocket.addMessageHandler( new org.realityforge.gwt.websockets.client.event.MessageEvent.Handler()
+    register( webSocket.addMessageHandler( new MessageEvent.Handler()
     {
       @Override
-      public void onMessageEvent( @Nonnull final org.realityforge.gwt.websockets.client.event.MessageEvent event )
+      public void onMessageEvent( @Nonnull final MessageEvent event )
       {
         onMessage( event.getData() );
       }
@@ -208,78 +191,6 @@ public final class Example
       registration.removeHandler();
     }
     _registrations.clear();
-  }
-
-  private void registerListeners( final WebPoller eventSource )
-  {
-    register( eventSource.addStartHandler( new org.realityforge.gwt.webpoller.client.event.StartEvent.Handler()
-    {
-      @Override
-      public void onStartEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.StartEvent event )
-      {
-        onOpen();
-      }
-    } ) );
-    register( eventSource.addStopHandler( new org.realityforge.gwt.webpoller.client.event.StopEvent.Handler()
-    {
-      @Override
-      public void onStopEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.StopEvent event )
-      {
-        onClose();
-      }
-    } ) );
-    register( eventSource.addErrorHandler( new org.realityforge.gwt.webpoller.client.event.ErrorEvent.Handler()
-    {
-      @Override
-      public void onErrorEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.ErrorEvent event )
-      {
-        onError();
-      }
-    } ) );
-    register( eventSource.addMessageHandler( new org.realityforge.gwt.webpoller.client.event.MessageEvent.Handler()
-    {
-      @Override
-      public void onMessageEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.MessageEvent event )
-      {
-        onMessage( event.getContext(), event.getData() );
-      }
-    } ) );
-  }
-
-  private void registerListeners( final EventSource eventSource )
-  {
-    register( eventSource.addOpenHandler( new org.realityforge.gwt.eventsource.client.event.OpenEvent.Handler()
-    {
-      @Override
-      public void onOpenEvent( @Nonnull final org.realityforge.gwt.eventsource.client.event.OpenEvent event )
-      {
-        onOpen();
-      }
-    } ) );
-    register( eventSource.addCloseHandler( new org.realityforge.gwt.eventsource.client.event.CloseEvent.Handler()
-    {
-      @Override
-      public void onCloseEvent( @Nonnull final org.realityforge.gwt.eventsource.client.event.CloseEvent event )
-      {
-        onClose();
-      }
-    } ) );
-    register( eventSource.addErrorHandler( new org.realityforge.gwt.eventsource.client.event.ErrorEvent.Handler()
-    {
-      @Override
-      public void onErrorEvent( @Nonnull final org.realityforge.gwt.eventsource.client.event.ErrorEvent event )
-      {
-        onError();
-      }
-    } ) );
-    register( eventSource.addMessageHandler( new org.realityforge.gwt.eventsource.client.event.MessageEvent.Handler()
-    {
-      @Override
-      public void onMessageEvent( @Nonnull final org.realityforge.gwt.eventsource.client.event.MessageEvent event )
-      {
-        onMessage( event.getData() );
-      }
-    } ) );
   }
 
   private void onMessage( @Nonnull final String data )
