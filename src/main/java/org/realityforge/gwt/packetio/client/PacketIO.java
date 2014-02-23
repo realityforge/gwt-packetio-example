@@ -8,7 +8,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.realityforge.gwt.eventsource.client.EventSource;
+import org.realityforge.gwt.eventsource.client.EventSourceListenerAdapter;
 import org.realityforge.gwt.packetio.client.event.ErrorEvent;
 import org.realityforge.gwt.packetio.client.event.MessageEvent;
 import org.realityforge.gwt.packetio.client.event.StartEvent;
@@ -16,6 +18,7 @@ import org.realityforge.gwt.packetio.client.event.StopEvent;
 import org.realityforge.gwt.webpoller.client.HttpRequestFactory;
 import org.realityforge.gwt.webpoller.client.WebPoller;
 import org.realityforge.gwt.websockets.client.WebSocket;
+import org.realityforge.gwt.websockets.client.WebSocketListenerAdapter;
 
 public class PacketIO
 {
@@ -256,38 +259,35 @@ public class PacketIO
 
   private void registerListeners( final WebSocket webSocket )
   {
-    register( webSocket.addOpenHandler( new org.realityforge.gwt.websockets.client.event.OpenEvent.Handler()
+    webSocket.setListener( new WebSocketListenerAdapter()
     {
       @Override
-      public void onOpenEvent( @Nonnull final org.realityforge.gwt.websockets.client.event.OpenEvent event )
+      public void onOpen( @Nonnull final WebSocket webSocket )
       {
         onStart();
       }
-    } ) );
-    register( webSocket.addCloseHandler( new org.realityforge.gwt.websockets.client.event.CloseEvent.Handler()
-    {
+
       @Override
-      public void onCloseEvent( @Nonnull final org.realityforge.gwt.websockets.client.event.CloseEvent event )
+      public void onClose( @Nonnull final WebSocket webSocket,
+                           final boolean wasClean,
+                           final int code,
+                           @Nullable final String reason )
       {
         onStop();
       }
-    } ) );
-    register( webSocket.addErrorHandler( new org.realityforge.gwt.websockets.client.event.ErrorEvent.Handler()
-    {
+
       @Override
-      public void onErrorEvent( @Nonnull final org.realityforge.gwt.websockets.client.event.ErrorEvent event )
+      public void onMessage( @Nonnull final WebSocket webSocket, @Nonnull final String data )
       {
-        onError( new Exception() );
+        PacketIO.this.onMessage( data );
       }
-    } ) );
-    register( webSocket.addMessageHandler( new org.realityforge.gwt.websockets.client.event.MessageEvent.Handler()
-    {
+
       @Override
-      public void onMessageEvent( @Nonnull final org.realityforge.gwt.websockets.client.event.MessageEvent event )
+      public void onError( @Nonnull final WebSocket webSocket )
       {
-        onMessage( event.getTextData() );
+        PacketIO.this.onError( new Throwable( "" ) );
       }
-    } ) );
+    } );
   }
 
   private void registerListeners( final WebPoller webPoller )
@@ -328,38 +328,34 @@ public class PacketIO
 
   private void registerListeners( final EventSource eventSource )
   {
-    register( eventSource.addOpenHandler( new org.realityforge.gwt.eventsource.client.event.OpenEvent.Handler()
-    {
+    eventSource.setListener( new EventSourceListenerAdapter() {
       @Override
-      public void onOpenEvent( @Nonnull final org.realityforge.gwt.eventsource.client.event.OpenEvent event )
+      public void onOpen( @Nonnull final EventSource eventSource )
       {
         onStart();
       }
-    } ) );
-    register( eventSource.addCloseHandler( new org.realityforge.gwt.eventsource.client.event.CloseEvent.Handler()
-    {
+
       @Override
-      public void onCloseEvent( @Nonnull final org.realityforge.gwt.eventsource.client.event.CloseEvent event )
+      public void onClose( @Nonnull final EventSource eventSource )
       {
         onStop();
       }
-    } ) );
-    register( eventSource.addErrorHandler( new org.realityforge.gwt.eventsource.client.event.ErrorEvent.Handler()
-    {
+
       @Override
-      public void onErrorEvent( @Nonnull final org.realityforge.gwt.eventsource.client.event.ErrorEvent event )
+      public void onMessage( @Nonnull final EventSource eventSource,
+                             @Nullable final String lastEventId,
+                             @Nonnull final String type,
+                             @Nonnull final String data )
       {
-        onError( new Exception() );
+        PacketIO.this.onMessage( data );
       }
-    } ) );
-    register( eventSource.addMessageHandler( new org.realityforge.gwt.eventsource.client.event.MessageEvent.Handler()
-    {
+
       @Override
-      public void onMessageEvent( @Nonnull final org.realityforge.gwt.eventsource.client.event.MessageEvent event )
+      public void onError( @Nonnull final EventSource eventSource )
       {
-        onMessage( event.getData() );
+        PacketIO.this.onError( new Throwable() );
       }
-    } ) );
+    } );
   }
 
   private void onMessage( @Nonnull final String data )

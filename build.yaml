@@ -13,9 +13,9 @@ artifacts:
 
   gwt_webpoller: org.realityforge.gwt.webpoller:gwt-webpoller:jar:0.4
 
-  gwt_websockets: org.realityforge.gwt.websockets:gwt-websockets:jar:0.4
+  gwt_websockets: org.realityforge.gwt.websockets:gwt-websockets:jar:1.0
 
-  gwt_eventsource: org.realityforge.gwt.eventsource:gwt-eventsource:jar:0.5
+  gwt_eventsource: org.realityforge.gwt.eventsource:gwt-eventsource:jar:1.0
 
   jersey_server: org.glassfish.jersey.core:jersey-server:jar:2.0
   jersey_sse: org.glassfish.jersey.media:jersey-media-sse:jar:2.0
