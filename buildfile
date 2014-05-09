@@ -1,4 +1,5 @@
 require 'buildr/git_auto_version'
+require 'buildr/gwt'
 
 desc 'A simple application demonstrating the use of the gwt-packetio library'
 define 'gwt-packetio-example' do
