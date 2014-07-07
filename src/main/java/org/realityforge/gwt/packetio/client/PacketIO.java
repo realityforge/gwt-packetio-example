@@ -328,7 +328,8 @@ public class PacketIO
 
   private void registerListeners( final EventSource eventSource )
   {
-    eventSource.setListener( new EventSourceListenerAdapter() {
+    eventSource.setListener( new EventSourceListenerAdapter()
+    {
       @Override
       public void onOpen( @Nonnull final EventSource eventSource )
       {
