@@ -4,7 +4,6 @@ import com.google.gwt.http.client.RequestBuilder;
 import com.google.web.bindery.event.shared.EventBus;
 import com.google.web.bindery.event.shared.HandlerRegistration;
 import com.google.web.bindery.event.shared.SimpleEventBus;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
@@ -17,12 +16,12 @@ import org.realityforge.gwt.packetio.client.event.StartEvent;
 import org.realityforge.gwt.packetio.client.event.StopEvent;
 import org.realityforge.gwt.webpoller.client.HttpRequestFactory;
 import org.realityforge.gwt.webpoller.client.WebPoller;
+import org.realityforge.gwt.webpoller.client.WebPollerListener;
 import org.realityforge.gwt.websockets.client.WebSocket;
 import org.realityforge.gwt.websockets.client.WebSocketListenerAdapter;
 
 public class PacketIO
 {
-  private final ArrayList<HandlerRegistration> _registrations = new ArrayList<HandlerRegistration>();
   private final EventBus _eventBus;
   private EventSource _eventSource;
   private WebSocket _webSocket;
@@ -205,8 +204,7 @@ public class PacketIO
         _webPoller = WebPoller.newWebPoller();
         _webPoller.setRequestFactory( new HttpRequestFactory( requestBuilder ) );
         registerListeners( _webPoller );
-        // Configure long poll
-        _webPoller.setLongPoll( false );
+        _webPoller.setInterRequestDuration( 0 );
         _webPoller.start();
       }
       break;
@@ -239,22 +237,7 @@ public class PacketIO
       _webSocket.close();
       _webSocket = null;
     }
-    deregisterHandlers();
     onStop();
-  }
-
-  private void register( final HandlerRegistration handlerRegistration )
-  {
-    _registrations.add( handlerRegistration );
-  }
-
-  private void deregisterHandlers()
-  {
-    for ( final HandlerRegistration registration : _registrations )
-    {
-      registration.removeHandler();
-    }
-    _registrations.clear();
   }
 
   private void registerListeners( final WebSocket webSocket )
@@ -292,38 +275,34 @@ public class PacketIO
 
   private void registerListeners( final WebPoller webPoller )
   {
-    register( webPoller.addStartHandler( new org.realityforge.gwt.webpoller.client.event.StartEvent.Handler()
+    webPoller.setListener( new WebPollerListener()
     {
       @Override
-      public void onStartEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.StartEvent event )
+      public void onStart( @Nonnull final WebPoller webPoller )
       {
-        onStart();
+        PacketIO.this.onStart();
       }
-    } ) );
-    register( webPoller.addStopHandler( new org.realityforge.gwt.webpoller.client.event.StopEvent.Handler()
-    {
+
       @Override
-      public void onStopEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.StopEvent event )
+      public void onStop( @Nonnull final WebPoller webPoller )
       {
-        onStop();
+        PacketIO.this.onStop();
       }
-    } ) );
-    register( webPoller.addErrorHandler( new org.realityforge.gwt.webpoller.client.event.ErrorEvent.Handler()
-    {
+
       @Override
-      public void onErrorEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.ErrorEvent event )
+      public void onMessage( @Nonnull final WebPoller webPoller,
+                             @Nonnull final Map<String, String> context,
+                             @Nonnull final String data )
       {
-        onError( event.getException() );
+        PacketIO.this.onMessage( context, data );
       }
-    } ) );
-    register( webPoller.addMessageHandler( new org.realityforge.gwt.webpoller.client.event.MessageEvent.Handler()
-    {
+
       @Override
-      public void onMessageEvent( @Nonnull final org.realityforge.gwt.webpoller.client.event.MessageEvent event )
+      public void onError( @Nonnull final WebPoller webPoller, @Nonnull final Throwable exception )
       {
-        onMessage( event.getContext(), event.getData() );
+        PacketIO.this.onError( exception );
       }
-    } ) );
+    } );
   }
 
   private void registerListeners( final EventSource eventSource )
