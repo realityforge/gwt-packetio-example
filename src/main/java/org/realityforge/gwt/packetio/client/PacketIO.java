@@ -173,7 +173,7 @@ public class PacketIO
   {
     final String baseURL = getBaseURL();
 
-    switch ( _strategy )
+    switch ( getStrategy() )
     {
       case EVENTSOURCE:
         if ( EventSource.isSupported() )
@@ -184,7 +184,7 @@ public class PacketIO
         }
         else
         {
-          throw new IllegalStateException( _strategy + " strategy not supported" );
+          throw new IllegalStateException( getStrategy() + " strategy not supported" );
         }
         break;
       case WEBSOCKET:
@@ -196,7 +196,7 @@ public class PacketIO
         }
         else
         {
-          throw new IllegalStateException( _strategy + " strategy not supported" );
+          throw new IllegalStateException( getStrategy() + " strategy not supported" );
         }
         break;
       case POLL:
@@ -213,7 +213,7 @@ public class PacketIO
 
       default:
       {
-          throw new IllegalStateException( _strategy + " strategy not supported" );
+        throw new IllegalStateException( getStrategy() + " strategy not supported" );
       }
     }
     if ( !isActive() )
